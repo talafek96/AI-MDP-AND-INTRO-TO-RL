@@ -1,9 +1,44 @@
 from copy import deepcopy
 import random
+from typing import List, Set, Tuple
 import numpy as np
+from mdp import MDP
 
 
-def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
+def get_states(mdp: MDP) -> List[Tuple[int, int]]:
+    return [(i, j) for i in range(len(mdp.board)) for j in range(len(mdp.board[0])) if mdp.board[i][j] != 'WALL']
+
+
+def get_reward(mdp: MDP, state: Tuple[int, int]) -> float:
+    return float(mdp.board[state[0]][state[1]]) if mdp.board[state[0]][state[1]] != 'WALL' else -np.inf
+
+
+def get_actions(mdp: MDP):
+    return list(mdp.transition_function.keys())
+
+
+def get_neighbours(mdp: MDP, state: Tuple[int, int]) -> List[Tuple[int, int]]:
+    return list({mdp.step(state, action) for action in get_actions(mdp)})
+
+
+def get_probability(mdp: MDP, state: Tuple[int, int], action: str, dest_state: Tuple[int, int]):
+    '''
+    Implements P(dest_state | action, state)
+    '''
+    actions = get_actions(mdp)
+    assert action in actions
+
+    if state in mdp.terminal_states or dest_state not in get_neighbours(mdp, state):
+        return 0.
+
+    action_to_index = dict(zip(actions, range(len(actions))))
+    deter_actions_to_dest_state = [action for action in actions if mdp.step(state, action) == dest_state]
+
+    return sum(float(mdp.transition_function[action][action_to_index[orientation_action]]) \
+                for orientation_action in deter_actions_to_dest_state)
+
+
+def value_iteration(mdp: MDP, U_init: List[List[float]], epsilon: float=1e-3):
     # TODO:
     # Given the mdp, the initial utility of each state - U_init,
     #   and the upper limit - epsilon.
@@ -12,7 +47,28 @@ def value_iteration(mdp, U_init, epsilon=10 ** (-3)):
     #
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    states = get_states(mdp)
+    actions = get_actions(mdp)
+    delta = np.inf
+    U_next = deepcopy(U_init)
+    U = deepcopy(U_init)
+
+    while delta >= epsilon * (1 - mdp.gamma) / mdp.gamma:
+        U = deepcopy(U_next)
+        delta = 0
+
+        for state in states:
+            U_next[state[0]][state[1]] = \
+                get_reward(mdp, state) + \
+                    mdp.gamma * max([
+                            sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]] \
+                                for neighbour in get_neighbours(mdp, state)) \
+                                    for action in actions
+                        ])
+            
+            delta = max(delta, np.abs(U_next[state[0]][state[1]] - U[state[0]][state[1]]))
+    
+    return U
     # ========================
 
 

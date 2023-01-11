@@ -1,7 +1,7 @@
 import argparse
 import os
 from mdp import MDP
-from mdp_rl_implementation import value_iteration, get_policy, q_learning_policy, policy_evaluation, q_learning, q_table_policy_extraction
+from mdp_rl_implementation import value_iteration, get_policy, policy_evaluation, q_learning, q_table_policy_extraction
 
 
 def is_valid_file(parser, arg):
@@ -42,7 +42,7 @@ def example_driver():
     mdp = MDP(board=board_env,
               terminal_states=terminal_states_env,
               transition_function=transition_function_env,
-              gamma=1)
+              gamma=0.9)
 
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
     print("@@@@@@ The board and rewards @@@@@@")
@@ -73,7 +73,7 @@ def example_driver():
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
     print("\nBest Policy:")
-    policy = q_table_policy_extraction(mdp, q_learning_policy(mdp, (2, 0)))
+    policy = q_table_policy_extraction(mdp, q_learning(mdp, (2, 0)))
     mdp.print_policy(policy)
 
     # Bonus
