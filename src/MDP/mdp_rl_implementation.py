@@ -9,8 +9,12 @@ def get_states(mdp: MDP) -> List[Tuple[int, int]]:
     return [(i, j) for i in range(len(mdp.board)) for j in range(len(mdp.board[0])) if mdp.board[i][j] != 'WALL']
 
 
+def is_state(mdp: MDP, state: Tuple[int, int]) -> bool:
+    return state in get_states(mdp)
+
+
 def get_reward(mdp: MDP, state: Tuple[int, int]) -> float:
-    return float(mdp.board[state[0]][state[1]]) if mdp.board[state[0]][state[1]] != 'WALL' else -np.inf
+    return float(mdp.board[state[0]][state[1]]) if is_state(mdp, state) else -np.inf
 
 
 def get_actions(mdp: MDP):
@@ -72,14 +76,25 @@ def value_iteration(mdp: MDP, U_init: List[List[float]], epsilon: float=1e-3):
     # ========================
 
 
-def get_policy(mdp, U):
+def get_policy(mdp: MDP, U: List[List[float]]):
     # TODO:
     # Given the mdp and the utility of each state - U (which satisfies the Belman equation)
     # return: the policy
     #
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    actions = get_actions(mdp)
+    index_to_action = dict(enumerate(actions))
+    def get_best_action(state: Tuple[int, int]) -> str:
+        nonlocal mdp, U, index_to_action, actions
+        assert state in get_states(mdp)
+
+        best_action = index_to_action[np.argmax([sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]]
+                                        for neighbour in get_neighbours(mdp, state))
+                                            for action in actions])]
+        return best_action
+
+    return [[get_best_action((i, j)) if is_state(mdp, (i, j)) else None for j in range(mdp.num_col)] for i in range(mdp.num_row)]
     # ========================
 
 
