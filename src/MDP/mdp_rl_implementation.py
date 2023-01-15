@@ -33,11 +33,12 @@ def simulate_step(mdp: MDP, state: Tuple[int, int], action: str) -> Tuple[int, i
     actions = get_actions(mdp)
     action_to_index = dict(zip(actions, range(len(actions))))
 
-    next_state_probabilities = {next_state: probability 
-                                    for next_state, probability in \
-                                        [(mdp.step(state, gt_action), mdp.transition_function[action][action_to_index[gt_action]]) \
-                                            for gt_action in actions]}
-    next_state = random.choices(list(next_state_probabilities.keys()), weights=list(next_state_probabilities.values()), k=1)[0]
+    next_state_probabilities = {next_state: probability
+                                for next_state, probability in
+                                [(mdp.step(state, gt_action), mdp.transition_function[action][action_to_index[gt_action]])
+                                 for gt_action in actions]}
+    next_state = random.choices(list(next_state_probabilities.keys()), weights=list(
+        next_state_probabilities.values()), k=1)[0]
     return next_state
 
 
@@ -52,13 +53,14 @@ def get_probability(mdp: MDP, state: Tuple[int, int], action: str, dest_state: T
         return 0.
 
     action_to_index = dict(zip(actions, range(len(actions))))
-    deter_actions_to_dest_state = [action for action in actions if mdp.step(state, action) == dest_state]
+    deter_actions_to_dest_state = [
+        action for action in actions if mdp.step(state, action) == dest_state]
 
-    return sum(float(mdp.transition_function[action][action_to_index[orientation_action]]) \
-                for orientation_action in deter_actions_to_dest_state)
+    return sum(float(mdp.transition_function[action][action_to_index[orientation_action]])
+               for orientation_action in deter_actions_to_dest_state)
 
 
-def value_iteration(mdp: MDP, U_init: List[List[float]], epsilon: float=1e-3):
+def value_iteration(mdp: MDP, U_init: List[List[float]], epsilon: float = 1e-3):
     # TODO:
     # Given the mdp, the initial utility of each state - U_init,
     #   and the upper limit - epsilon.
@@ -80,14 +82,15 @@ def value_iteration(mdp: MDP, U_init: List[List[float]], epsilon: float=1e-3):
         for state in states:
             U_next[state[0]][state[1]] = \
                 get_reward(mdp, state) + \
-                    mdp.gamma * max([
-                            sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]] \
-                                for neighbour in get_neighbours(mdp, state)) \
-                                    for action in actions
-                        ])
-            
-            delta = max(delta, np.abs(U_next[state[0]][state[1]] - U[state[0]][state[1]]))
-    
+                mdp.gamma * max([
+                    sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]]
+                                for neighbour in get_neighbours(mdp, state))
+                    for action in actions
+                ])
+
+            delta = max(delta, np.abs(
+                U_next[state[0]][state[1]] - U[state[0]][state[1]]))
+
     return U
     # ========================
 
@@ -101,13 +104,14 @@ def get_policy(mdp: MDP, U: List[List[float]]):
     # ====== YOUR CODE: ======
     actions = get_actions(mdp)
     index_to_action = dict(enumerate(actions))
+
     def get_best_action(state: Tuple[int, int]) -> str:
         nonlocal mdp, U, index_to_action, actions
         assert state in get_states(mdp)
 
         best_action = index_to_action[np.argmax([sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]]
-                                        for neighbour in get_neighbours(mdp, state))
-                                            for action in actions])]
+                                                     for neighbour in get_neighbours(mdp, state))
+                                                 for action in actions])]
         return best_action
 
     return [[get_best_action((i, j)) if is_state(mdp, (i, j)) else None for j in range(mdp.num_col)] for i in range(mdp.num_row)]
@@ -115,7 +119,7 @@ def get_policy(mdp: MDP, U: List[List[float]]):
 
 
 def q_learning(mdp: MDP, init_state: Tuple[int, int], total_episodes=10000, max_steps=999, learning_rate=0.7, epsilon=1.0,
-                      max_epsilon=1.0, min_epsilon=0.01, decay_rate=0.8, show_progress: bool=False):
+               max_epsilon=1.0, min_epsilon=0.01, decay_rate=0.8):
     # TODO:
     # Given the mdp and the Qlearning parameters:
     # total_episodes - number of episodes to run for the learning algorithm
@@ -145,17 +149,18 @@ def q_learning(mdp: MDP, init_state: Tuple[int, int], total_episodes=10000, max_
 
         for _ in range(max_steps):
             # Choose an action in the current state.
-            ## First, sample a random number to determine whether to explore or exploit
+            # First, sample a random number to determine whether to explore or exploit
             explore_exploit_tradeoff = random.uniform(0, 1)
 
-            ## If it is greater than epsilon --> exploit (take the best/biggest Q value for this state)
+            # If it is greater than epsilon --> exploit (take the best/biggest Q value for this state)
             if explore_exploit_tradeoff > epsilon:
-                chosen_action = index_to_action[np.argmax(qtable[state_to_index[state], :])]
+                chosen_action = index_to_action[np.argmax(
+                    qtable[state_to_index[state], :])]
 
-            ## Else --> explore (do a random action)
+            # Else --> explore (do a random action)
             else:
                 chosen_action = random.sample(actions, 1)[0]
-            
+
             # Take the chosen action and observe the outcome state and the corresponding reward
             new_state = simulate_step(mdp, state, chosen_action)
             reward = get_reward(mdp, new_state)
@@ -164,18 +169,19 @@ def q_learning(mdp: MDP, init_state: Tuple[int, int], total_episodes=10000, max_
             # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max (Q(s',a')) - Q(s,a)]
             qtable[state_to_index[state], action_to_index[chosen_action]] = \
                 qtable[state_to_index[state], action_to_index[chosen_action]] + learning_rate * (reward + mdp.gamma *
-                    np.max(qtable[state_to_index[new_state], :]) - qtable[state_to_index[state], action_to_index[chosen_action]])
-            
+                                                                                                 np.max(qtable[state_to_index[new_state], :]) - qtable[state_to_index[state], action_to_index[chosen_action]])
+
             # Update the current state
             state = deepcopy(new_state)
 
             # Finish the episode if reached a terminal state
             if done:
                 break
-        
+
         # Reduce epsilon in order to get less and less exploration
-        epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate * episode)
-    
+        epsilon = min_epsilon + (max_epsilon - min_epsilon) * \
+            np.exp(-decay_rate * episode)
+
     return qtable
     # ========================
 
@@ -195,25 +201,68 @@ def q_table_policy_extraction(mdp, qtable):
     def get_best_action(state: Tuple[int, int]) -> str:
         nonlocal qtable, state_to_index, index_to_action
         return index_to_action[np.argmax(qtable[state_to_index[state], :])]
-    
+
     return [[get_best_action((i, j)) if is_state(mdp, (i, j)) else None for j in range(mdp.num_col)] for i in range(mdp.num_row)]
     # ========================
 
 
 # BONUS
 
-def policy_evaluation(mdp, policy):
+def policy_evaluation(mdp: MDP, policy: List[List[str]]):
     # TODO:
     # Given the mdp, and a policy
     # return: the utility U(s) of each state s
     #
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    assert mdp.gamma < 1
+
+    states = get_states(mdp)
+    state_to_index = dict(zip(states, range(len(states))))
+
+    def get_probability_matrix() -> np.ndarray:
+        '''
+        Returns a probability matrix according to the policy in the shape [S, S].
+        Includes terminal states that have self loops in order to maintain matrix invertibility.
+        '''
+        nonlocal mdp, states, state_to_index, policy
+        P = np.zeros((len(states), len(states)))
+
+        for state in states:
+            if state in mdp.terminal_states:
+                # Add a self loop to avoid making the matrix non invertible
+                P[state_to_index[state], state_to_index[state]] = 1
+                continue
+            neighbours = get_neighbours(mdp, state)
+            for neighbour in neighbours:
+                P[state_to_index[state]][state_to_index[neighbour]] = \
+                    get_probability(mdp, state, policy[state[0]][state[1]], neighbour)
+        
+        return P
+    
+    def get_rewards_vector() -> np.ndarray:
+        '''
+        Returns a rewards vector in the shape of [S, 1]
+        '''
+        nonlocal mdp, states
+        return np.array([get_reward(mdp, state) for state in states]).reshape(len(states), -1)
+    
+    def utility_vector_to_board(u_vec: np.ndarray) -> List[List[float]]:
+        nonlocal mdp, state_to_index
+        u_board = [[u_vec[state_to_index[(i, j)]][0] if is_state(mdp, (i, j)) else -np.inf
+                        for j in range(mdp.num_col)]
+                            for i in range(mdp.num_row)]
+        return u_board
+    
+    eye = np.eye(len(states))
+    P = get_probability_matrix()
+    R = get_rewards_vector()
+
+    return utility_vector_to_board(np.linalg.inv(eye - mdp.gamma * P) @ R)
     # ========================
 
 
-def policy_iteration(mdp, policy_init):
+def policy_iteration(mdp: MDP, policy_init: List[List[str]]):
     # TODO:
     # Given the mdp, and the initial policy - policy_init
     # run the policy iteration algorithm
@@ -221,5 +270,34 @@ def policy_iteration(mdp, policy_init):
     #
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    changed: bool = False
+    policy = deepcopy(policy_init)
+    states = get_states(mdp)
+    actions = get_actions(mdp)
+    index_to_action = dict(enumerate(actions))
+
+    while not changed:
+        U = policy_evaluation(mdp, policy)
+        changed = False
+
+        for state in states:
+            if state in mdp.terminal_states:
+                continue
+            
+            neighbours = get_neighbours(mdp, state)
+            expected_val_per_action = [
+                sum(get_probability(mdp, state, action, neighbour) * U[neighbour[0]][neighbour[1]]
+                    for neighbour in neighbours)
+                for action in actions
+            ]
+
+            max_action_index = np.argmax(expected_val_per_action)
+            max_action_value = expected_val_per_action[max_action_index]
+            if max_action_value > \
+                sum(get_probability(mdp, state, policy[state[0]][state[1]], neighbour) * U[neighbour[0]][neighbour[1]]
+                    for neighbour in neighbours):
+                policy[state[0]][state[1]] = index_to_action[max_action_index]
+                changed = True
+    
+    return policy
     # ========================
