@@ -1,4 +1,3 @@
-from tqdm.auto import tqdm
 from copy import deepcopy
 import random
 from typing import List, Set, Tuple
@@ -137,11 +136,9 @@ def q_learning(mdp: MDP, init_state: Tuple[int, int], total_episodes=10000, max_
     index_to_action = dict(enumerate(actions))
     state_to_index = dict(zip(states, range(len(states))))
 
-    total_episodes_gen = tqdm(range(total_episodes)) if show_progress else range(total_episodes)
-
     qtable = np.zeros((len(states), len(actions)))
 
-    for episode in total_episodes_gen:
+    for episode in range(total_episodes):
         # Reset the environment
         state = deepcopy(init_state)
         done = False
