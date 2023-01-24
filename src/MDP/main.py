@@ -94,6 +94,8 @@ def example_driver():
     print("\nFinal policy:")
     policy_new = policy_iteration(mdp, policy)
     mdp.print_policy(policy_new)
+    print("\nFinal policy evaluation:")
+    mdp.print_utility(policy_evaluation(mdp, policy_new))
 
     print("Done!")
 

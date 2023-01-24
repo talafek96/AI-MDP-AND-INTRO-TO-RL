@@ -230,8 +230,7 @@ def policy_evaluation(mdp: MDP, policy: List[List[str]]):
 
         for state in states:
             if state in mdp.terminal_states:
-                # Add a self loop to avoid making the matrix non invertible
-                P[state_to_index[state], state_to_index[state]] = 1
+                P[state_to_index[state], state_to_index[state]] = 0
                 continue
             neighbours = get_neighbours(mdp, state)
             for neighbour in neighbours:
