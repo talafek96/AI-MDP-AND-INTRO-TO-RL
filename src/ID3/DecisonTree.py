@@ -103,7 +103,7 @@ class DecisionNode:
                  question,
                  true_branch,
                  false_branch):
-        self.question = question
+        self.question: Question = question
         self.true_branch = true_branch
         self.false_branch = false_branch
 
