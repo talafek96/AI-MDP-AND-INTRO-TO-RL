@@ -9,8 +9,8 @@ Make the imports of python packages needed
 
 
 class ID3:
-    def __init__(self, label_names: list, min_for_pruning=0, target_attribute='diagnosis'):
-        self.label_names = label_names
+    def __init__(self, feature_names: list, min_for_pruning=0, target_attribute='diagnosis'):
+        self.feature_names = feature_names
         self.target_attribute = target_attribute
         self.tree_root = None
         self.used_features = set()
@@ -62,7 +62,7 @@ class ID3:
         # ====== YOUR CODE: ======
         num_left = len(left)
         num_right = len(right)
-        num_total = left + right
+        num_total = num_left + num_right
 
         info_gain_value = current_uncertainty \
             - (num_left / num_total) * self.entropy(left, left_labels) \
@@ -90,7 +90,6 @@ class ID3:
 
         # ====== YOUR CODE: ======
         rows = np.array(rows)
-        labels = np.array(labels)
 
         for row, label in zip(rows, labels):
             if question.match(row):
@@ -124,12 +123,11 @@ class ID3:
 
         # ====== YOUR CODE: ======
         rows = np.array(rows)
-        labels = np.array(labels)
 
         for i, feature in enumerate(rows.transpose()):
             sorted_feature = np.sort(feature)
             thresholds = [(sorted_feature[j] + sorted_feature[j + 1]) / 2 for j in range(len(sorted_feature) - 1)]
-            questions = [Question(f'{self.label_names[i]}^{threshold:.2f}', i, threshold) for threshold in thresholds]
+            questions = [Question(f'{self.feature_names[i]}^{threshold:.2f}', i, threshold) for threshold in thresholds]
             gains = np.array([self.partition(rows, labels, question, current_uncertainty)[0] for question in questions])
 
             max_gain_index = gains.argmax()
@@ -163,7 +161,7 @@ class ID3:
 
         # ====== YOUR CODE: ======
         counts = class_counts(rows, labels)
-        if len(counts) <= 1:
+        if len(counts) <= 1 or sum(counts.values()) <= self.min_for_pruning:
             return Leaf(rows, labels)
 
         _, best_question, best_true_rows, best_true_labels, best_false_rows, best_false_labels = \
@@ -237,7 +235,7 @@ class ID3:
         y_pred = None
 
         # ====== YOUR CODE: ======
-        y_pred = [self.predict_sample(row) for row in rows]
+        y_pred = np.array([self.predict_sample(row) for row in rows], dtype=object)
         # ========================
 
         return y_pred

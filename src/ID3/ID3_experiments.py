@@ -16,7 +16,32 @@ target_attribute = 'diagnosis'
 
 
 # ========================================================================
-def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
+def get_train_test_sets(train_csv: str, test_csv: str, target: str):
+    '''
+    Gets paths for training and test csv data, and loads them into a numpy array.
+    The target label is determined by `target`.
+
+    Return:
+    -------
+    x_train (ndarray), y_train (ndarray), x_test (ndarray), y_test (ndarray), features (List[str]).
+    '''
+
+    train_set = pd.read_csv(train_csv)
+    test_set = pd.read_csv(test_csv)
+
+    x_train = train_set.loc[:, train_set.columns != target].values
+    x_test = test_set.loc[:, test_set.columns != target].values
+
+    y_train = train_set[target].values
+    y_test = test_set[target].values
+
+    features = train_set.columns[train_set.columns != target].values
+
+    return x_train, y_train, x_test, y_test, features
+
+
+
+def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False, attributes_names: list=None):
     """
     Use ID3 model, to train on the training dataset and evaluating the accuracy in the test set.
     """
@@ -29,7 +54,15 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    feature_names = [attribute for attribute in attributes_names if attribute != target_attribute]
+    tree = ID3(feature_names, target_attribute=target_attribute)
+
+    tree.fit(x_train, y_train)
+
+    y_pred = tree.predict(x_test)
+    y_train = np.array(y_train, dtype=object)
+
+    acc = sum(y_pred == y_test) / len(x_test)
     # ========================
 
     assert acc > 0.9, 'you should get an accuracy of at least 90% for the full ID3 decision tree'
@@ -38,7 +71,7 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
 
 # ========================================================================
 
-def best_m_test(x_train, y_train, x_test, y_test, min_for_pruning):
+def best_m_test(x_train, y_train, x_test, y_test, min_for_pruning, attributes_names: list=None):
     """
         Test the pruning for the best M value we have got from the cross validation experiment.
         :param: best_m: the value of M with the highest mean accuracy across folds
@@ -53,7 +86,15 @@ def best_m_test(x_train, y_train, x_test, y_test, min_for_pruning):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    feature_names = [attribute for attribute in attributes_names if attribute != target_attribute]
+    tree = ID3(feature_names, target_attribute=target_attribute, min_for_pruning=min_for_pruning)
+
+    tree.fit(x_train, y_train)
+
+    y_pred = tree.predict(x_test)
+    y_train = np.array(y_train, dtype=object)
+
+    acc = sum(y_pred == y_test) / len(x_test)
     # ========================
 
     return acc
@@ -70,7 +111,7 @@ if __name__ == '__main__':
         modify the call "utils.set_formatted_values(value=False)" from False to True and run it
     """
     formatted_print = True
-    basic_experiment(*data_split, formatted_print)
+    basic_experiment(*data_split, formatted_print, attributes_names)
 
     """
        cross validation experiment
@@ -78,14 +119,15 @@ if __name__ == '__main__':
            uncomment below code and run it
            modify the value from False to True to plot the experiment result
     """
-    plot_graphs = True
-    best_m = cross_validation_experiment(plot_graph=plot_graphs)
-    print(f'best_m = {best_m}')
+    # plot_graphs = True
+    # best_m = cross_validation_experiment(plot_graph=plot_graphs)
+    # print(f'best_m = {best_m}')
 
     """
         pruning experiment, run with the best parameter
         (*) To run the experiment uncomment below code and run it
     """
-    acc = best_m_test(*data_split, min_for_pruning=best_m)
+    best_m = 50
+    acc = best_m_test(*data_split, min_for_pruning=best_m, attributes_names=attributes_names)
     assert acc > 0.95, 'you should get an accuracy of at least 95% for the pruned ID3 decision tree'
     print(f'Test Accuracy: {acc * 100:.2f}%' if formatted_print else acc)
