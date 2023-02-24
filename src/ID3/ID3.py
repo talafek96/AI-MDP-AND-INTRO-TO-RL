@@ -9,8 +9,8 @@ Make the imports of python packages needed
 
 
 class ID3:
-    def __init__(self, feature_names: list, min_for_pruning=0, target_attribute='diagnosis'):
-        self.feature_names = feature_names
+    def __init__(self, label_names: list, min_for_pruning=0, target_attribute='diagnosis'):
+        self.label_names = label_names
         self.target_attribute = target_attribute
         self.tree_root = None
         self.used_features = set()
@@ -127,7 +127,7 @@ class ID3:
         for i, feature in enumerate(rows.transpose()):
             sorted_feature = np.sort(feature)
             thresholds = [(sorted_feature[j] + sorted_feature[j + 1]) / 2 for j in range(len(sorted_feature) - 1)]
-            questions = [Question(f'{self.feature_names[i]}^{threshold:.2f}', i, threshold) for threshold in thresholds]
+            questions = [Question(f'{self.label_names[i]}^{threshold:.2f}', i, threshold) for threshold in thresholds]
             gains = np.array([self.partition(rows, labels, question, current_uncertainty)[0] for question in questions])
 
             max_gain_index = gains.argmax()
